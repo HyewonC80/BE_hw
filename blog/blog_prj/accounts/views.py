@@ -35,3 +35,7 @@ def user_info(request):
 
 def mypage(request):
     return render(request, 'accounts/mypage.html')
+
+def myblog(request):
+    posts = request.user.posts.all().order_by('-id') #역참조
+    return render(request, 'accounts/myblog.html', {'posts': posts})
