@@ -3,6 +3,7 @@ from .models import Post, Comment, Category
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 
+
 def list(request):
     categories = Category.objects.all()
     category_id = request.GET.get('category')
@@ -12,10 +13,11 @@ def list(request):
         posts = category.posts.all().order_by('-id')
     else:
         posts = Post.objects.all().order_by('-id')
-    
-    return render(request, 'blog/list.html', {'posts':posts, 'categories':categories})
 
-@login_required  #로그인한 사용자만 접근 가능, 미로그인자 접근 시 자동으로 로그인 url로 리다이렉트
+    return render(request, 'blog/list.html', {'posts': posts, 'categories': categories})
+
+
+@login_required
 def create(request):
     categories = Category.objects.all()
 
@@ -26,30 +28,39 @@ def create(request):
         video = request.FILES.get('video')
 
         category_ids = request.POST.getlist('category')
-        category_list = [get_object_or_404(Category, id=category_id) for category_id in category_ids]
+        category_list = [
+            get_object_or_404(Category, id=category_id)
+            for category_id in category_ids
+        ]
 
         post = Post.objects.create(
-            title = title,
-            content = content,
-            author = request.user,
-            image = image,
-            video = video
+            title=title,
+            content=content,
+            author=request.user,
+            image=image,
+            video=video
         )
 
         for category in category_list:
             post.category.add(category)
 
         return redirect('blog:list')
-    return render(request, 'blog/create.html', {'categories':categories})
+
+    return render(request, 'blog/create.html', {'categories': categories})
+
 
 def detail(request, id):
     post = get_object_or_404(Post, id=id)
-    return render(request, 'blog/detail.html', {'post':post})
+
+    return render(request, 'blog/detail.html', {'post': post})
+
 
 def delete(request, id):
     post = get_object_or_404(Post, id=id)
     post.delete()
+
     return redirect('blog:list')
+
 
 def update(request, id):
     post = get_object_or_404(Post, id=id)
@@ -66,25 +77,30 @@ def update(request, id):
 
         if video:
             post.video.delete()
-            post.video =video
-    
+            post.video = video
+
         post.save()
         return redirect('blog:detail', id)
-    return render(request, 'blog/update.html', {'post':post})
+
+    return render(request, 'blog/update.html', {'post': post})
+
 
 @login_required
 def create_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id)
+
     if request.method == 'POST':
         content = request.POST.get('content')
 
-        Comment.objects.create(
-            post = post,
-            content = content,
-            author = request.user
+        post.comments.create(
+            content=content,
+            author=request.user
         )
+
         return redirect('blog:detail', post_id)
+
     return redirect('blog:list')
+
 
 def like(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -94,4 +110,5 @@ def like(request, post_id):
         post.like.remove(user)
     else:
         post.like.add(user)
+
     return redirect('blog:detail', post_id)
